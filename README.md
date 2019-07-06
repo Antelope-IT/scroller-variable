@@ -9,7 +9,7 @@ The image runs a simple python script scroller-env.py which takes the value of t
 
 Health Warning
 ==============
-Please be aware that this is the first docker image I have built and the first time I've used Python. I have created this source code by following many "Getting started with..." articles. You are welcome to use this code and to learn from my mistakes, however I make no guarantees as to its functionality or suitability. 
+Please be aware that this is one of the first docker image I have built and the first time I've used Python. I have created this source code by following many "Getting started with..." articles. You are welcome to use this code and to learn from my mistakes, however I make no guarantees as to its functionality or suitability. 
 
 Build
 ---------
@@ -35,12 +35,22 @@ Publish
 -------
 ```
 docker tag scroll-env-variable \
-   antelopeit/scroller-variable:stretch-python37-1.0
+   antelopeit/scroller-variable:stretch-python35-1.1
    
 docker push \
-   antelopeit/scroller-variable:stretch-python37-1.0   
+   antelopeit/scroller-variable:stretch-python35-1.1
+
+docker tag scroll-env-variable \
+   antelopeit/scroller-variable:latest
+   
+docker push \
+   antelopeit/scroller-variable:latest  
 ```
+
+Changes
+=======
+The base image for the docker file is [balenalib/raspberry-pi-debian](https://hub.docker.com/r/balenalib/raspberry-pi-debian). Initially I used the [balenalib/raspberry-pi-python:3.7-stretch](https://hub.docker.com/r/balenalib/raspberry-pi-python) image however because it was using Python v3.7 it meant that numpy had to built as part of the build process. In an effort to reduce build times and complexity I tried using the balenalib/raspberry-pi-python:3.5.7-stretch-run as the base image so that the build could leverage pre-compiled versions of dependencies from [PiWheels](https://www.piwheels.org/), however, although the build times were reduced the code failed to run. After a day spent on google-bing-duck.duck.go I believe that the problem is down to an incompatibility between how Python modules are compiled for Raspbian and on PiWheels (with the FPECTL module) and Python on the Balena images (compiled without FPECTL). The solution appears to be (credit to Shaun Mulligan, Balena Team) to build the Docker image based on the simplest Balena PiZero Stretch image and then add Python to it via apt-get. Because I'm installing Python v3.5 with apt-get I also took the opportunity to install the python3-scrollphathd library at the same time. This in turn installs its dependencies (numpy, smbus etc.). As a result pip is nolonger required to install any dependencies, simplifying the build further.
 
 Future
 ======
-The base image for the docker file [balenalib/raspberry-pi-python](https://hub.docker.com/r/balenalib/raspberry-pi-python) is AFAIK a sound starting point. I tried other images but couldn't get them to work. This was the first image I could get to work. The image is probably larger than strictly necessary, this is because its a 'build' version of the image. I could possibly change it for the 'run' version of the image, however as part of the installation the Docker file installs the scrollphathd python library. This library has a dependency on numpy amongst others but because the base image is using Python 3.7 this means that there is no readily available pre-compiled version of numpy on [PiWheels](https://www.piwheels.org/). The net result of this is that the installation has to build numpy. I don't know the full implications of this but I do know that on a Pi Zero it takes a while and you should probably not trust a version of numpy built on my Pi Zero. In order to resolve this problem it would probably be better to build the image with a Python v3.5 based image and hope that it installs a prebuilt numpy library from PiWheels. This in turn would obviate the need to build the numpy library and thus remove the need to use the 'build' version of the base image (if it were ever needed) and allowing the use of the smaller 'run' version of the base image.
+This version of the Scroller does what I intended it to do, and by changing the base image I have removed the need to build numpy, from the build process. With the exception of my Python script all packages and dependencies are from recognised sources. So although its possibe that I may update the image for newer versions of Raspbian and Python; Buster and v3.7 respectively I don't intend to add more functionality to this repository. Other versions of the Scroller are planned but these will be in separate repositories.   
